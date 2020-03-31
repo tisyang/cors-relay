@@ -575,10 +575,9 @@ static void conn_read_cb(EV_P_ ev_io *w, int revents)
         // fill user agent
         sscanf(ag, "%63[^\n]", useragent);
         // test protocol
-        char url[64], proto[64];
-        url[0] = '\0';
-        proto[0] = '\0';
-        if (sscanf(p, "GET %63s %63s", url, proto) < 2 || strncmp(proto, "HTTP/1", strlen("HTTP/1")) != 0) {
+        char url[64] = {0};
+        char proto[64] = {0};
+        if (sscanf(p, "GET %s %s", url, proto) < 2 || strncmp(proto, "HTTP/1", strlen("HTTP/1")) != 0) {
             LOG_ERROR("conn(%d) invalid ntrip proto=%s", conn->socket, proto);
             caster_close_conn(EV_A_ caster, conn);
             return;
@@ -616,11 +615,9 @@ static void conn_read_cb(EV_P_ ev_io *w, int revents)
         int auth = 0; // if authorization success
         char token[64];
         if ((p = strstr(conn->recv, "Authorization:"))) {
-            char method[32];
-            char tokenbuf[64];
-            method[0] = '\0';
-            tokenbuf[0] = '\0';
-            if (sscanf(p, "Authorization: %31s %63s", method, tokenbuf) == 2) {
+            char method[32] = {0};
+            char tokenbuf[64] = {0};
+            if (sscanf(p, "Authorization: %s %s", method, tokenbuf) == 2) {
                 if (strcmp(method, "Basic") == 0) {
                     // decode token
                     size_t tklen = 0;
@@ -964,7 +961,7 @@ static void on_cmd_cb(int revents, void* arg)
             int   argc = 0;
             char* argv[8];
             char* p = strtok(buf, " \t\r\n");
-            while (p != NULL) {
+            while (p != NULL && argc < 8) {
                 argv[argc++] = p;
                 p = strtok(NULL, " \t\r\n");
             }
@@ -1261,7 +1258,7 @@ int main(int argc, const char *argv[])
     ev_periodic_start(EV_A_ &caster.periodic_reload);
 
     while (1) {
-        usleep(1000000);
+        usleep(1000);
         ev_loop(loop, EVRUN_NOWAIT);
         // fetch all source ntrip data and send to client agents
         struct ntrip_source *src, *tmpsrc;
